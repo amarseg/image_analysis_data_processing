@@ -7,7 +7,7 @@ library(broom)
 library(ggpubr)
 
 
-gene_names <- read_tsv('../annotation/sysID2product.tsv', skip = 1,
+gene_names <- read_tsv('../Annotation/sysID2product.tsv', skip = 1,
                        col_names = c('Systematic_ID','Name','Other_names','Description')) %>%
   mutate(Name = case_when(is.na(Name) ~ Systematic_ID,
                           TRUE ~ Name)) %>%

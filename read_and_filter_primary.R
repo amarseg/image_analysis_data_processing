@@ -1,23 +1,23 @@
 library('tidyverse')
 source('functions_CPA.R')
 
-rep1 <- c('Z:/Pers_Amalia/Screening/Analysed_data/aug_sept_2018/')
-rep2 <- c('Z:/Pers_Amalia/Screening/Analysed_data/replicate_2/', 
-          'Z:/Pers_Amalia/Screening/Analysed_data/replicate_2_batch_2/',
-          'Z:/Pers_Amalia/Screening/Analysed_data/batch_3/',
-          'Z:/Pers_Amalia/Screening/Analysed_data/batch_4/')
+rep1 <- c('S:/Pers_Amalia/Screening/Analysed_data/aug_sept_2018/')
+rep2 <- c('S:/Pers_Amalia/Screening/Analysed_data/replicate_2/', 
+          'S:/Pers_Amalia/Screening/Analysed_data/replicate_2_batch_2/',
+          'S:/Pers_Amalia/Screening/Analysed_data/batch_3/',
+          'S:/Pers_Amalia/Screening/Analysed_data/batch_4/')
 
 plates <- c(1:36)
 plates <- paste0('Plate',plates)
 plates <- paste(plates, collapse = '|')
 
-rep1_folders <- list.files(rep1, full.names = T, recursive = T, pattern = 'Nuclei_AR_Solidity_Filtered.csv')
+rep1_folders <- dir(rep1, full.names = T, recursive = T, pattern = 'Nuclei_AR_Solidity_Filtered.csv')
 rep1_extract <- grep(rep1_folders, pattern = plates, value = T)
 
 rep2_folders <- list.files(rep2, full.names = T, recursive = T, pattern = 'Nuclei_AR_Solidity_Filtered.csv')[-2]
 rep2_folders <- grep(rep2_folders, pattern = 'Plate', value = T)
 
-cell_number <- read_csv('../Analysed_data/aug_sept_2018/cell_countsImage.csv') %>%
+cell_number <- read_csv('S:/Pers_Amalia/Screening/Analysed_data/aug_sept_2018/cell_countsImage.csv') %>%
   separate(FileName_DNA, into = c('Well','Well_n','Picture','Z_axis','Time','Type'), sep = '--') %>%
   mutate(Proportion_AR_filter = Count_Nuclei_AR_filtered/(Count_Nuclei+Count_Nuclei_AR_filtered), 
          Proportion_solidity_filter = Count_Nuclei_AR_Solidity_Filtered/(Count_Nuclei_AR_filtered+ Count_Nuclei_AR_Solidity_Filtered)) 
