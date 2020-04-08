@@ -44,6 +44,10 @@ no_trace_data <-  read_csv('../processed_data/no_filter_live_imaging_data.csv') 
          Name = case_when(Systematic_ID == 'wt' ~ paste0('wt', Metadata_Well, Metadata_Row),
                           TRUE ~ Name))
 
+hand_data <- read_csv('../Annotation/hand_annotation.csv')
+
+model_data <- read_csv('../processed_data/slopes_maximal_size.csv')
+
 primary_screen <- read_csv('../Annotation/hits_i_guess.csv') %>%
   rename(Systematic_ID = `Systematic ID`)
 
@@ -110,3 +114,128 @@ ggplot(all_data,
   geom_line() +
   geom_point() +
   facet_wrap(~type)
+######################Comparing models omics########
+annot_models <- model_data %>%
+  left_join(gene_lists, by = c('Systematic_ID')) %>%
+  left_join(hand_data, by = c('Systematic_ID' = 'Systematic ID'))
+
+ggplot(annot_models, aes(x = reorder(Systematic_ID, slope, 'median'), y = slope,
+                         fill = type)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggplot(annot_models, aes(x = reorder(Systematic_ID, max_size, 'median'), y = max_size,
+                         fill = type)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+ggplot(annot_models, aes(x = reorder(Systematic_ID, slope, 'median'), y = slope,
+                         fill = Grow_not_grow)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggplot(annot_models, aes(x = reorder(Name, max_size, 'median'), y = max_size,
+                         fill = Grow_not_grow)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+##############all data + hand made#############
+hand_all_data <- all_data %>%
+  inner_join(hand_data, by = c('Systematic_ID' = 'Systematic ID'))
+
+ggplot(hand_all_data, aes(x = Metadata_Time, y = median_area_live_imaging,
+                          group = Systematic_ID, colour = Grow_not_grow)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~Grow_not_grow)
+###########p value versus slope
+ggplot(filter(annot_models, !is.na(Grow_not_grow)), aes(x = p_val, y = slope,
+                          colour = Grow_not_grow)) +
+  geom_point() +
+  facet_wrap(~Grow_not_grow)
+
+ggplot(filter(annot_models, !is.na(Grow_not_grow)), aes(x = Systematic_ID, y = slope,
+                                                        colour = Grow_not_grow)) +
+  geom_boxplot() 
+
+ggplot(filter(annot_models, !is.na(Grow_not_grow)), aes(x = Systematic_ID, y = p_val,
+                                                        colour = Grow_not_grow)) +
+  geom_boxplot() 
+
+#########
+pval_cutoff <- annot_models %>%
+  mutate(growth = case_when(slope < 0.01 ~ 'No',
+                            TRUE ~ 'Yes')) %>%
+  left_join(gene_names, by = c('Systematic_ID'))  %>%
+  mutate(Name = case_when(is.na(Name) ~ Systematic_ID,
+                          TRUE ~ Name))%>%
+  write_csv('../processed_data/results_secondary_screen.csv')
+
+ggplot(pval_cutoff, aes(x = reorder(Name, slope, 'median'), y = slope,
+                         fill = Grow_not_grow)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  facet_wrap(~growth)
+
+ggplot(pval_cutoff, aes(x = reorder(Name, max_size, 'median'), y = max_size,
+                         fill = Grow_not_grow)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  facet_wrap(~growth)
+##########propotion growth and number of cells#########
+pval_cutoff %>%
+  group_by(Systematic_ID, growth, Grow_not_grow, Name) %>%
+  summarise(n = n()) %>%
+  ggplot(aes(x = Name, y = n,
+             colour= Grow_not_grow)) +
+  geom_point() +
+  facet_wrap(~growth) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+
+
+pval_cutoff %>%
+  group_by(Systematic_ID,Grow_not_grow, Name) %>%
+  summarise(n_growing = sum(growth == 'Yes'),
+            n_not_growing = sum(growth == 'No')) %>%
+  mutate(proportion = n_growing/(n_growing + n_not_growing)) %>%
+  ggplot(aes(x = reorder(Name, proportion), y = proportion,
+             colour= Grow_not_grow)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+
+
+#########colour according to omics#####
+ggplot(pval_cutoff, aes(x = reorder(Name, slope, 'median'), y = slope,
+                        fill = type)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  facet_wrap(~growth)
+
+ggplot(pval_cutoff, aes(x = reorder(Name, max_size, 'median'), y = max_size,
+                        fill = type)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  facet_wrap(~growth)
+
+########Primary screen and omics############
+annot_primary <- read_csv('../processed_data/output_rep1/summary_stats_rep1.csv') %>%
+  rename('Systematic_ID' = `Systematic ID`) %>%
+  left_join(gene_lists, by = c('Systematic_ID')) 
+
+ggplot(annot_primary, aes(x = type, 
+                          y = mean_area, 
+                          colour = type)) +
+  geom_boxplot() +
+  geom_jitter()
+
+
+annot_primary <- read_csv('../processed_data/output_rep2/statistics_rep2.csv') %>%
+  rename('Systematic_ID' = `Systematic ID`) %>%
+  left_join(gene_lists, by = c('Systematic_ID')) 
+
+ggplot(annot_primary, aes(x = type, 
+                          y = mean_area, 
+                          colour = type)) +
+  geom_boxplot() +
+  geom_jitter()

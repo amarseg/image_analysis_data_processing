@@ -122,7 +122,7 @@ slopes_p_val_filtered <- model_coeff_lm %>%
 
 
 slopes_pval_annot <- slopes_p_val_filtered %>%
-  filter(p_adj < 0.05) %>%
+  #filter(p_adj < 0.05) %>%
   mutate(Name = case_when(str_detect(Systematic_ID, 'wt') ~ Systematic_ID,
                           TRUE ~ Name)) %>%
   mutate(wild_type = case_when(str_detect(Systematic_ID, 'wt') ~ 'wt',
@@ -131,11 +131,7 @@ slopes_pval_annot <- slopes_p_val_filtered %>%
 max_sizes <- all_data %>%
   inner_join(slopes_pval_annot, by = c('Systematic_ID','cell_n')) %>%
   group_by(Systematic_ID, Name, cell_n, growing_not_growing, wild_type, row) %>%
-  summarise(max_size = max(AreaShape_Area)) 
-
-
-
-max_sizes %>%
-  right_join(slopes_p_val_filtered, by = c('cell_n')) %>%
+  summarise(max_size = max(AreaShape_Area), slope = unique(estimate), 
+            p_val = unique(p_adj)) %>%
   write_csv('../processed_data/slopes_maximal_size.csv')
 
